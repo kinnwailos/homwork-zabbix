@@ -1,0 +1,14 @@
+# 1. Проверьте YC CLI
+yc --version
+
+# 2. Проверьте аутентификацию
+yc config get folder-id
+
+# 3. Проверьте SSH-ключ
+ls -la ~/.ssh/id_rsa.pub
+
+# 4. Проверьте квоты
+yc compute quota get
+
+# 5. Проверьте Python
+python3 --version  # Должно быть 3.8+
