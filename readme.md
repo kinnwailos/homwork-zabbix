@@ -110,15 +110,3 @@
 | INGRESS | 10051 | TCP | 10.128.0.0/16 | Zabbix Agent Active |
 | EGRESS | 1-65535 | TCP | 0.0.0.0/0 | All Outbound |
 | EGRESS | 1-65535 | UDP | 0.0.0.0/0 | All Outbound |
-
----
-
-## 📝 КОМАНДЫ ДЛЯ РАЗВЁРТЫВАНИЯ
-
-### 1. Проверка предварительных условий
-
-```bash
-yc --version
-yc config get folder-id
-ls -la ~/.ssh/id_rsa.pub
-python3 --version
