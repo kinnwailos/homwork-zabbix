@@ -178,30 +178,37 @@ def create_security_group_interactive():
         Logger.warning("Пропущено по выбору пользователя")
         return None
 
-    if subprocess.run(f"yc vpc security-group get {Config.SG_NAME}", shell=True, capture_output=True).returncode == 0:
+    # Проверяем, существует ли уже
+    result = subprocess.run(
+        f"yc vpc security-group get {Config.SG_NAME}",
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode == 0:
         Logger.warning("Группа безопасности уже существует")
     else:
-        rules = [
-            'direction=ingress,port=80,protocol=tcp,v4-cidrs="0.0.0.0/0"',
-            'direction=ingress,port=22,protocol=tcp,v4-cidrs="0.0.0.0/0"',
-            'direction=ingress,port=10050,protocol=tcp,v4-cidrs="10.128.0.0/16"',
-            'direction=ingress,port=10051,protocol=tcp,v4-cidrs="10.128.0.0/16"',
-            'direction=egress,port=1-65535,protocol=tcp,v4-cidrs="0.0.0.0/0"',
-            'direction=egress,port=1-65535,protocol=udp,v4-cidrs="0.0.0.0/0"',
-            'direction=egress,protocol=icmp,v4-cidrs="0.0.0.0/0"',
-        ]
-        rules_str = ' '.join([f'--rule {r}' for r in rules])
+        Logger.info(f"Создание группы безопасности {Config.SG_NAME}...")
 
+        # Создаём по одному правилу за раз (надёжнее)
         run_command(f"""
             yc vpc security-group create \\
                 --name {Config.SG_NAME} \\
                 --network-name {Config.NETWORK_NAME} \\
                 --folder-id {Config.FOLDER_ID} \\
                 --description "Security group for Zabbix" \\
-                {rules_str}
+                --rule direction=ingress,port=80,protocol=tcp,v4-cidrs="0.0.0.0/0",description="HTTP" \\
+                --rule direction=ingress,port=22,protocol=tcp,v4-cidrs="0.0.0.0/0",description="SSH" \\
+                --rule direction=ingress,port=10050,protocol=tcp,v4-cidrs="10.128.0.0/16",description="Zabbix-Agent" \\
+                --rule direction=ingress,port=10051,protocol=tcp,v4-cidrs="10.128.0.0/16",description="Zabbix-Server" \\
+                --rule direction=egress,protocol=tcp,port=1-65535,v4-cidrs="0.0.0.0/0",description="All-TCP" \\
+                --rule direction=egress,protocol=udp,port=1-65535,v4-cidrs="0.0.0.0/0",description="All-UDP" \\
+                --rule direction=egress,protocol=icmp,v4-cidrs="0.0.0.0/0",description="ICMP"
         """)
         Logger.success("Группа безопасности создана")
 
+    # Получаем ID
     result = run_json(f"yc vpc security-group get {Config.SG_NAME}")
     return result['id']
 
